@@ -172,7 +172,7 @@ export default Vue.extend({
       return uuidv4()
     },
     userKeymap() {
-      const value = this.settings?.keymap.value;
+      const value = this.settings?.keymap?.value;
       const keymapTypes = this.$config.defaults.keymapTypes
       return value && keymapTypes.map(k => k.value).includes(value) ? value : 'default';
     },

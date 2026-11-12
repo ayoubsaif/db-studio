@@ -81,6 +81,11 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
 }
 
 function transformSetting(obj: UserSetting, _cls: any): TransportUserSetting {
+  // a setting that was never saved (e.g. keymap on a fresh install) comes back empty
+  if (_.isNil(obj)) {
+    return null
+  }
+
   return {
     ...obj,
     value: obj.value

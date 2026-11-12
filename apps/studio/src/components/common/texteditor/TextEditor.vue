@@ -66,7 +66,7 @@ export default {
     },
     userKeymap() {
       const settings = this.$store.state.settings?.settings;
-      const value = settings?.keymap.value;
+      const value = settings?.keymap?.value;
       return value && this.keymapTypes.map((k) => k.value).includes(value)
         ? value
         : "default";

@@ -123,6 +123,14 @@
             <i class="material-icons">refresh</i>
           </button>
           <button
+            @click.prevent="exportTables"
+            title="Export Tables"
+            :disabled="tablesLoading || !hasExportableTables"
+            v-if="canExportTables"
+          >
+            <i class="material-icons">file_download</i>
+          </button>
+          <button
             @click.prevent="newTable"
             title="New Table"
             class="create-table"
@@ -241,6 +249,12 @@
       async supportsRoutines() {
         return this.supportedFeatures.customRoutines
       },
+      canExportTables() {
+        return !this.dialectData.disabledFeatures?.exportTable
+      },
+      hasExportableTables() {
+        return (this.tables || []).some((t) => t.entityType === 'table')
+      },
       canCreateTable() {
         return !this.dialectData.disabledFeatures?.createTable
       },
@@ -276,6 +290,11 @@
     methods: {
       clearFilter() {
         this.filterQuery = null
+      },
+      exportTables() {
+        // every table in the database starts checked; views stay unchecked
+        const tables = (this.tables || []).filter((t) => t.entityType === 'table')
+        this.trigger(AppEvent.beginExport, { multiple: true, tables })
       },
       toggleExpandCollapse() {
         this.isExpanded = !this.isExpanded

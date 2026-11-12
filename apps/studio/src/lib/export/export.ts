@@ -28,8 +28,10 @@ export abstract class Export {
   timeElapsed = 0
   timeLeft = 0
   private cursor?: BeeCursor
-  private columns?: TableColumn[]
+  protected columns?: TableColumn[]
   private fileHandle?: promises.FileHandle
+  // a row separator still owed before the next row (see needsFinalSeparator)
+  private pendingSeparator = false
   private callbacks = {
     progress: Array<ProgressCallback>()
   }
@@ -121,82 +123,94 @@ export abstract class Export {
     return md5sum.digest('hex')
   }
 
+  /** Things the user should know about a finished export, eg cut cell values. */
+  warnings(): string[] {
+    return []
+  }
+
+  // Output steps. Text formats use these defaults; binary formats (xlsx)
+  // override them instead of getHeader / formatRow / getFooter.
+  protected async openOutput(): Promise<void> {
+    this.fileHandle = await fs.promises.open(this.filePath, 'w+')
+  }
+
+  protected async writeHeader(columns: TableColumn[]): Promise<void> {
+    const header = await this.getHeader(columns)
+    if (header) {
+      await this.fileHandle?.write(header)
+    }
+  }
+
+  protected async writeRows(rows: any[][]): Promise<void> {
+    for (let rI = 0; rI < rows.length; rI++) {
+      const row = rows[rI];
+      const mutated = Mutators.mutateRow(row, this.columns?.map((c) => c.dataType), this.preserveComplex, dialectFor(this.connection.connectionType))
+      const formatted = this.formatRow(mutated, this.columns)
+
+      // pendingSeparator allows us to skip adding the rowSeparator
+      // on the FINAL row of the file
+      if (this.pendingSeparator === true) {
+        await this.fileHandle?.write(this.rowSeparator)
+      }
+      await this.fileHandle?.write(formatted)
+      if (rI === rows.length - 1 && !this.needsFinalSeparator) {
+        this.pendingSeparator = true
+      } else {
+        await this.fileHandle?.write(this.rowSeparator)
+        this.pendingSeparator = false
+      }
+    }
+  }
+
+  protected async writeFooter(): Promise<void> {
+    const footer = await this.getFooter()
+    await this.fileHandle?.write(footer)
+  }
+
+  protected async closeOutput(): Promise<void> {
+    const handle = this.fileHandle
+    this.fileHandle = undefined
+    await handle?.close()
+  }
+
   async initExport(): Promise<void> {
     this.status = ExportStatus.Exporting
     this.countExported = 0
+    this.pendingSeparator = false
 
+    await this.openOutput()
 
-    this.fileHandle = await fs.promises.open(this.filePath, 'w+')
-
-    let results;
-    if (this.table) {
-      results = await this.connection.selectTopStream(
+    const results = this.table
+      ? await this.connection.selectTopStream(
         this.table.name,
         [],
         this.filters,
         this.options.chunkSize,
         this.table.schema,
       )
-      this.columns = results.columns
-      this.cursor = results.cursor
-
-      this.countTotal = results.totalRows
-      await this.cursor?.start()
-      const header = await this.getHeader(results.columns)
-
-      if (header) {
-        await this.fileHandle.write(header)
-      }
-    }
-    else {
       // string sql query, not table
-      results = await this.connection.queryStream(
+      : await this.connection.queryStream(
         this.query,
         this.options.chunkSize,
       )
-      this.columns = results.columns
-      this.cursor = results.cursor
 
-      this.countTotal = results.totalRows
-      await this.cursor?.start()
-      const header = await this.getHeader(results.columns)
-
-      if (header) {
-        await this.fileHandle.write(header)
-      }
-
-    }
+    this.columns = results.columns
+    this.cursor = results.cursor
+    this.countTotal = results.totalRows
+    await this.cursor?.start()
+    await this.writeHeader(results.columns)
   }
 
   async exportData(): Promise<void> {
       // keep going until we don't get any more results.
       log.debug("running export")
       let rows: any[][]
-      let needsSeparator = false
       do {
         if (!this.cursor) {
           throw new Error("Something went wrong")
         }
         rows = await this.cursor?.read()
-        for (let rI = 0; rI < rows.length; rI++) {
-          const row = rows[rI];
-          const mutated = Mutators.mutateRow(row, this.columns?.map((c) => c.dataType), this.preserveComplex, dialectFor(this.connection.connectionType))
-          const formatted = this.formatRow(mutated, this.columns)
-
-          // needsSeparator allows us to skip adding the rowSeparator
-          // on the FINAL row of the file
-          if (needsSeparator === true) {
-            await this.fileHandle?.write(this.rowSeparator)
-          }
-          await this.fileHandle?.write(formatted)
-          if (rI === rows.length - 1 && !this.needsFinalSeparator) {
-            // do nothing
-            needsSeparator = true
-          } else {
-            await this.fileHandle?.write(this.rowSeparator)
-            needsSeparator = false
-          }
-        }
+        await this.writeRows(rows)
         this.countExported += rows.length
 
         // console.log('calculating time left')
@@ -215,8 +229,7 @@ export abstract class Export {
     if (this.status === ExportStatus.Aborted) {
       return;
     }
-    const footer = await this.getFooter()
-    await this.fileHandle?.write(footer)
+    await this.writeFooter()
     this.status = ExportStatus.Completed
   }
 
@@ -227,7 +240,7 @@ export abstract class Export {
       await this.exportData()
       await this.finalizeExport()
 
-      await this.fileHandle?.close()
+      await this.closeOutput()
       if (this.status === ExportStatus.Aborted) {
         if (this.options.deleteOnAbort) {
           await promises.unlink(this.filePath)
@@ -237,12 +250,14 @@ export abstract class Export {
       this.status = ExportStatus.Error
       this.error = error
       log.error(error)
-      await this.fileHandle?.close()
-      if (this.options.deleteOnAbort) {
-        await promises.unlink(this.filePath)
+      try {
+        await this.closeOutput()
+      } catch (closeError) {
+        log.error(closeError)
       }
-    } finally {
-      this.fileHandle = undefined
+      if (this.options.deleteOnAbort) {
+        await promises.unlink(this.filePath).catch((e) => log.error(e))
+      }
     }
   }
 

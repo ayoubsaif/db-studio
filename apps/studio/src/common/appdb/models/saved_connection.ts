@@ -95,6 +95,9 @@ export class DbConnectionBase extends ApplicationEntity {
       case 'firebird':
         port = 3050
         break
+      case 'clickhouse':
+        port = this.ssl ? 8443 : 8123
+        break
       default:
         port = null
     }

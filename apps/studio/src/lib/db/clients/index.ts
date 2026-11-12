@@ -158,6 +158,16 @@ export const CLIENTS: ClientConfig[] = [
     ],
   },
   {
+    key: 'clickhouse',
+    name: 'ClickHouse',
+    defaultPort: 8123,
+    disabledFeatures: [
+      'server:schema',
+      'server:domain',
+      'server:socketPath',
+    ],
+  },
+  {
     key: 'libsql',
     name: 'LibSQL',
     defaultPort: 8080,

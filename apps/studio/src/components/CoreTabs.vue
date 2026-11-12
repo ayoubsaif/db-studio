@@ -90,6 +90,11 @@
             />
           </template>
         </tab-with-table>
+        <TabImportTable
+          v-if="tab.tabType === 'import-table'"
+          :active="activeTab === tab"
+          :tab="tab"
+        />
         <TableBuilder
           v-if="tab.tabType === 'table-builder'"
           :active="activeTab === tab"
@@ -226,6 +231,7 @@ import Statusbar from './common/StatusBar.vue'
 import CoreTabHeader from './CoreTabHeader.vue'
 import TableTable from './tableview/TableTable.vue'
 import TableProperties from './TabTableProperties.vue'
+import TabImportTable from './TabImportTable.vue'
 import TableBuilder from './TabTableBuilder.vue'
 import { AppEvent } from '../common/AppEvent'
 import { mapGetters, mapState } from 'vuex'
@@ -255,6 +261,7 @@ export default Vue.extend({
     CoreTabHeader,
     TableTable,
     TableProperties,
+    TabImportTable,
     Draggable,
     ShortcutHints,
     TableBuilder,
@@ -593,8 +600,15 @@ export default Vue.extend({
 
       this.$modal.show(this.modalName)
     },
-    beginImport() {
-      this.showUpgradeModal()
+    beginImport({ table }) {
+      const t = {} as TransportOpenTab;
+      t.tabType = 'import-table';
+      t.tableName = table.name
+      t.schemaName = table.schema
+      t.title = `Import: ${table.name}`
+      const existing = this.tabItems.find((tab) => matches(tab, t))
+      if (existing) return this.$store.dispatch('tabs/setActive', existing)
+      this.addTab(t)
     },
     duplicateDatabaseTable({ item: dbActionParams, action: dbAction }) {
       this.dbElement = dbActionParams.name

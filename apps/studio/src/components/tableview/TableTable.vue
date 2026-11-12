@@ -216,7 +216,6 @@
             <x-menuitem @click="importTab">
               <x-label>
                 Import from file
-                <span class="badge badge-info">Beta</span>
               </x-label>
             </x-menuitem>
             <x-menuitem @click="openQueryTab">
@@ -1327,6 +1326,8 @@ export default Vue.extend({
     async saveChanges() {
         this.saveError = null
 
+        if (!await this.confirmClickHouseMutations()) return
+
         let replaceData = false
 
         try {
@@ -1388,6 +1389,18 @@ export default Vue.extend({
           }
         }
     },
+    // ClickHouse updates and deletes run as mutations: they match rows by the
+    // (non-unique) primary key and can't be rolled back, so ask first.
+    async confirmClickHouseMutations() {
+      if (this.dialect !== 'clickhouse' || !(this.hasPendingUpdates || this.hasPendingDeletes)) {
+        return true
+      }
+      return await this.$confirm(
+        'Apply changes to ClickHouse?',
+        'Updates and deletes run as ClickHouse mutations. A ClickHouse primary key is not unique, so every row with the same key values is changed. These changes are applied one at a time and can\'t be rolled back.',
+        { confirmLabel: 'Apply changes' }
+      )
+    },
     discardChanges() {
       this.saveError = null
 
@@ -1407,7 +1420,7 @@ export default Vue.extend({
       pendingUpdate.cell.getElement().classList.remove('edit-error')
     },
     importTab() {
-      this.trigger(AppEvent.upgradeModal)
+      this.trigger(AppEvent.beginImport, { table: this.table })
     },
     openQueryTab() {
       const page = this.tabulator.getPage();

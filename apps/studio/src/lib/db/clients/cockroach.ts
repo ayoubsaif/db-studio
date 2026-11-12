@@ -8,6 +8,11 @@ import { IDbConnectionServer } from "../backendTypes";
 
 
 export class CockroachClient extends PostgresClient {
+  // CockroachDB has no xmax column to tell inserts from updates
+  importUpsertSql(): string | null {
+    return null
+  }
+
   async supportedFeatures(): Promise<SupportedFeatures> {
     return {
       customRoutines: true,

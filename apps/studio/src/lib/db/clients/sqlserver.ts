@@ -1,5 +1,6 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs';
+import { ImportSession } from '@/lib/import/session';
 import { parse as bytesParse } from 'bytes'
 import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, Request } from 'mssql'
 import { identify, StatementType } from 'sql-query-identifier'
@@ -832,6 +833,27 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   async alterRelation(payload: RelationAlterations) {
     const query = await this.alterRelationSql(payload)
     await this.executeWithTransaction(query);
+  }
+
+  async createImportSession(useTransaction: boolean): Promise<ImportSession> {
+    if (!useTransaction) return super.createImportSession(false)
+    // a Transaction holds one pooled connection; requests made from it run on that connection
+    const transaction = new sql.Transaction(this.pool)
+    let open = false
+    const run = (q: string) => this.executeQuery(q, { connection: new sql.Request(transaction) })
+    return {
+      transactional: true,
+      savepoints: true,
+      execute: run,
+      begin: async () => { await transaction.begin(); open = true },
+      commit: async () => { await transaction.commit(); open = false },
+      rollback: async () => { if (open) await transaction.rollback(); open = false },
+      savepoint: async (name) => { await run(`SAVE TRANSACTION ${name}`) },
+      rollbackTo: async (name) => { await run(`ROLLBACK TRANSACTION ${name}`) },
+      // SQL Server has no RELEASE SAVEPOINT
+      release: async () => undefined,
+      close: async () => { if (open) await transaction.rollback().catch(() => undefined); open = false },
+    }
   }
 
   getImportScripts(table: TableOrView): ImportScriptFunctions {

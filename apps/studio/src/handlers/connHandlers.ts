@@ -14,7 +14,7 @@ import { AzureAuthService } from "@/lib/db/authentication/azure";
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
   'conn/create': ({ config, osUser, sId }: {config: IConnection, osUser: string, sId: string }) => Promise<void>,
-  'conn/test': ({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string }) => Promise<void>,
+  'conn/test': ({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string }) => Promise<string | null>,
   'conn/changeDatabase': ({ newDatabase, sId }: { newDatabase: string, sId: string }) => Promise<void>,
   'conn/clearConnection': ({ sId }: { sId: string}) => Promise<void>,
 
@@ -158,10 +158,14 @@ export const ConnHandlers: IConnectionHandlers = {
     const server = ConnectionProvider.for(config, osUser, settings);
     const abortController = new AbortController();
     state(sId).connectionAbortController = abortController;
-    await server?.createConnection(config.defaultDatabase || undefined).connect(abortController.signal);
+    const connection = server?.createConnection(config.defaultDatabase || undefined);
+    await connection.connect(abortController.signal);
+    // report the server version when the client knows it; never fail the test over it
+    const version = await connection.versionString().catch(() => null);
     abortController.abort();
     server.disconnect();
     state(sId).connectionAbortController = null;
+    return version || null;
   },
 
   'conn/changeDatabase': async function({ newDatabase, sId }: { newDatabase: string, sId: string }) {

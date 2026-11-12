@@ -9,6 +9,8 @@ import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDat
 import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
+import { autocommitSession, ImportSession } from '@/lib/import/session';
+import { ImportUpsertSpec } from '@/lib/import/types';
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
@@ -288,6 +290,25 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
     queries.push(buildInsertQueries(this.knex, importedData).join(';'))
     return joinQueries(queries)
+  }
+
+  /**
+   * Where a file import runs its SQL. The default runs each statement on its own
+   * with no transaction; clients that can hold a dedicated connection override this.
+   */
+  async createImportSession(_useTransaction: boolean): Promise<ImportSession> {
+    return autocommitSession((sql) => this.executeQuery(sql))
+  }
+
+  /**
+   * Optional fast path for Append/Update and Append without update. Returns one
+   * statement that inserts the rows and, when a row's key already exists, updates
+   * it (or leaves it alone). It must return one row per inserted or updated row,
+   * with a boolean `inserted` column. Only used when the keys match a unique
+   * constraint. Return null where the database can't do this.
+   */
+  importUpsertSql(_spec: ImportUpsertSpec): string | null {
+    return null
   }
   // ****************************************************************************
 

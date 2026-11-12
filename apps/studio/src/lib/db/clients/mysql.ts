@@ -7,6 +7,7 @@ import {
   QueryLogOptions,
 } from "./BasicDatabaseClient";
 import mysql, { Connection } from "mysql2";
+import { ImportSession, SqlImportSession, standardTransactionSql } from '@/lib/import/session';
 import rawLog from "electron-log";
 import knexlib from "knex";
 import { readFileSync } from "fs";
@@ -1314,6 +1315,18 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
   resolveDefault(defaultValue: string) {
     return defaultValue;
+  }
+
+  async createImportSession(useTransaction: boolean): Promise<ImportSession> {
+    if (!useTransaction) return super.createImportSession(false)
+    const connection = await new Promise<mysql.PoolConnection>((resolve, reject) => {
+      this.conn.pool.getConnection((error, c) => error ? reject(error) : resolve(c))
+    })
+    return new SqlImportSession({
+      execute: (sql) => this.executeQuery(sql, { connection }),
+      close: async () => connection.release(),
+      transaction: { ...standardTransactionSql, begin: 'START TRANSACTION' },
+    })
   }
 
   getImportScripts(table: TableOrView): ImportScriptFunctions {

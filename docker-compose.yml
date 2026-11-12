@@ -12,6 +12,7 @@ volumes:
   cassandra:
   bigquery:
   firebird:
+  clickhouse:
 
 services:
 
@@ -173,3 +174,18 @@ services:
     #   - ./dev/docker_libsql:/var/lib/sqld
 
 
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.8
+    ports:
+      - 8123:8123
+      - 8443:8443
+    environment:
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: example
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - clickhouse:/var/lib/clickhouse

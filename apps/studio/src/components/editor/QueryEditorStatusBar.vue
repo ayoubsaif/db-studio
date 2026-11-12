@@ -26,7 +26,7 @@
                 :key="index"
                 :value="index"
               >
-                Result {{ index + 1 }}: {{ shortNum(resultOption.rows.length, 0) }} {{ window.main.pluralize('row',
+                Result {{ index + 1 }}: {{ shortNum(resultOption.rows.length, 0) }} {{ pluralize('row',
                                                                                                  resultOption.rows.length, false) }}</option>
             </select>
           </div>
@@ -95,10 +95,6 @@
               :disabled="!(result && result.truncated)"
             >
               <x-label>Download Full Resultset</x-label>
-              <i
-                v-if="$config.isCommunity"
-                class="material-icons menu-icon"
-              >stars</i>
             </x-menuitem>
           </span>
           <hr>
@@ -206,7 +202,7 @@ export default {
     ...mapState('settings', ['settings']),
     userKeymap: {
       get() {
-        const value = this.settings?.keymap.value;
+        const value = this.settings?.keymap?.value;
         return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
       },
       set(value) {

@@ -9,7 +9,9 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportScriptFunctions } from "../models";
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportScriptFunctions } from "../models";
+import { ImportSession, SqlImportSession, standardTransactionSql } from '@/lib/import/session';
+import { ImportUpsertSpec } from '@/lib/import/types';
 import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql, joinQueries } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
@@ -633,7 +635,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     const arrayMode: boolean = options?.arrayMode;
-    const data = await this.driverExecuteMultiple(queryText, { arrayMode });
+    const data = await this.driverExecuteMultiple(queryText, { arrayMode, connection: options?.connection });
 
     const commands = this.identifyCommands(queryText).map((item) => item.type);
 
@@ -1050,6 +1052,25 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       commitCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('COMMIT;', executeOptions),
       rollbackCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('ROLLBACK;', executeOptions)
     }
+  }
+
+  importUpsertSql(spec: ImportUpsertSpec): string | null {
+    const table = spec.target.schema ? this.knex(spec.target.table).withSchema(spec.target.schema) : this.knex(spec.target.table)
+    const conflict = table.insert(spec.rows).onConflict(spec.keyColumns)
+    const values = spec.columns.filter((c) => !spec.keyColumns.includes(c))
+    const statement = spec.mode === 'appendUpdate' ? conflict.merge(values) : conflict.ignore()
+    // xmax is 0 for a row this statement inserted, and set for one it updated
+    return `${statement.toQuery()} returning (xmax = 0) as inserted`
+  }
+
+  async createImportSession(useTransaction: boolean): Promise<ImportSession> {
+    if (!useTransaction) return super.createImportSession(false)
+    const connection = await this.conn.pool.connect()
+    return new SqlImportSession({
+      execute: (sql) => this.executeQuery(sql, { connection }),
+      close: async () => connection.release(),
+      transaction: standardTransactionSql,
+    })
   }
 
   protected async rawExecuteQuery(q: string, options: { connection?: PoolClient }): Promise<QueryResult | QueryResult[]> {

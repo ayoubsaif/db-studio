@@ -125,6 +125,10 @@
                   :config="config"
                   :testing="testing"
                 />
+                <click-house-form
+                  v-else-if="config.connectionType === 'clickhouse'"
+                  :config="config"
+                />
 
 
                 <!-- TEST AND CONNECT -->
@@ -205,6 +209,7 @@ import SaveConnectionForm from './connection/SaveConnectionForm.vue'
 import BigQueryForm from './connection/BigQueryForm.vue'
 import FirebirdForm from './connection/FirebirdForm.vue'
 import LibSQLForm from './connection/LibSQLForm.vue'
+import ClickHouseForm from './connection/ClickHouseForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
@@ -225,7 +230,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, UpsellContent, BigQueryForm, FirebirdForm, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal },
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, UpsellContent, BigQueryForm, FirebirdForm, LibSqlForm: LibSQLForm, ClickHouseForm, LoadingSsoModal: LoadingSSOModal },
 
   data() {
     return {
@@ -428,8 +433,8 @@ export default Vue.extend({
       try {
         this.testing = true
         this.connectionError = null
-        await this.$store.dispatch('test', this.config)
-        this.$noty.success("Connection looks good!")
+        const version = await this.$store.dispatch('test', this.config)
+        this.$noty.success(version ? `Connection looks good! Server version ${version}` : "Connection looks good!")
         return true
       } catch (ex) {
         this.connectionError = ex

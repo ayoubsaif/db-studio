@@ -1,5 +1,6 @@
 // Original Copyright (c) 2015 The SQLECTRON Team
 import { TableKey } from "@shared/lib/dialects/models";
+import { ImportSession, SqlImportSession, standardTransactionSql } from '@/lib/import/session';
 import { SqliteData } from "@shared/lib/dialects/sqlite";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SqliteChangeBuilder } from "@shared/lib/sql/change_builder/SqliteChangeBuilder";
@@ -539,6 +540,17 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async createDatabaseSQL(): Promise<string> {
     throw new Error("Method not implemented.");
+  }
+
+  async createImportSession(useTransaction: boolean): Promise<ImportSession> {
+    if (!useTransaction) return super.createImportSession(false)
+    const connection = this.acquireConnection()
+    return new SqlImportSession({
+      execute: (sql) => this.executeQuery(sql, { connection }),
+      // the in-memory database lives on its one connection, so keep it open
+      close: async () => { if (!this.isTempDB) connection.close() },
+      transaction: standardTransactionSql,
+    })
   }
 
   getImportScripts(table: TableOrView): ImportScriptFunctions {

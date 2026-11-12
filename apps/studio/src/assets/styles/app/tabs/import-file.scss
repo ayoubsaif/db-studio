@@ -1,0 +1,245 @@
+// Import from File tab
+.import-file-tab {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow: hidden;
+  overflow-y: auto;
+
+  .import-file-wrap {
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1.5rem 1.5rem 3rem;
+  }
+
+  .import-file-header {
+    margin-bottom: 1rem;
+    h2 {
+      font-size: 1.3rem;
+      margin: 0 0 0.75rem;
+    }
+    .table-name {
+      font-family: monospace;
+    }
+  }
+
+  .import-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    color: $text-lighter;
+    li.active {
+      color: $text-dark;
+      font-weight: 600;
+    }
+    li.done {
+      color: $text-dark;
+    }
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.4rem;
+      height: 1.4rem;
+      margin-right: 0.25rem;
+      border-radius: 50%;
+      border: 1px solid currentColor;
+      font-size: 0.75rem;
+    }
+    li.active .step-number {
+      background: $theme-primary;
+      border-color: $theme-primary;
+      color: $theme-bg;
+    }
+  }
+
+  .card-flat {
+    margin-bottom: 1rem;
+  }
+
+  .import-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0 1rem;
+    margin: 0.5rem 0;
+    .form-group {
+      margin-bottom: 0.75rem;
+    }
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.25rem;
+      &.disabled {
+        opacity: 0.5;
+      }
+    }
+  }
+
+  .import-hint {
+    color: $text-lighter;
+    margin: 0.5rem 0;
+    a {
+      margin-left: 0.5rem;
+    }
+  }
+
+  .import-plan {
+    margin-top: 0;
+  }
+
+  .import-table-scroll {
+    overflow: auto;
+    max-height: 420px;
+    margin-top: 0.5rem;
+  }
+
+  .import-grid {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.85rem;
+    th, td {
+      border: 1px solid $border-color;
+      padding: 0.3rem 0.5rem;
+      text-align: left;
+      white-space: nowrap;
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      vertical-align: middle;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      background: $theme-bg;
+      font-weight: 600;
+    }
+    .row-number {
+      color: $text-lighter;
+      text-align: right;
+      width: 1%;
+    }
+    .null-value {
+      color: $text-lighter;
+      font-style: italic;
+    }
+    .cell-error {
+      background: rgba($brand-danger, 0.2);
+      cursor: help;
+    }
+    &.mapping {
+      select {
+        width: 100%;
+      }
+      tr.skipped td:not(:nth-child(3)) {
+        color: $text-lighter;
+      }
+      .sample-value {
+        color: $text-lighter;
+      }
+    }
+  }
+
+  .import-modes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .import-mode {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid $border-color;
+    border-radius: 6px;
+    cursor: pointer;
+    input {
+      flex-shrink: 0;
+      margin-top: 0.2rem;
+    }
+    &.selected {
+      border-color: $theme-primary;
+    }
+    &.disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .mode-title {
+      font-weight: 600;
+    }
+    .mode-description {
+      color: $text-lighter;
+      font-size: 0.85rem;
+    }
+    .mode-note {
+      font-size: 0.8rem;
+      color: $brand-warning;
+      margin-top: 0.2rem;
+    }
+  }
+
+  .import-messages ul {
+    margin: 0;
+    padding-left: 1rem;
+  }
+
+  .import-progress {
+    p {
+      margin: 0.5rem 0;
+    }
+  }
+
+  .summary-title {
+    font-weight: 600;
+  }
+
+  .import-counts {
+    display: grid;
+    grid-template-columns: max-content max-content;
+    gap: 0.25rem 1.5rem;
+    margin: 1rem 0;
+    dt {
+      color: $text-lighter;
+      font-weight: normal;
+    }
+    dd {
+      margin: 0;
+      font-variant-numeric: tabular-nums;
+      &.failed {
+        color: $brand-danger;
+      }
+    }
+  }
+
+  .import-failed {
+    .failed-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    ul {
+      max-height: 260px;
+      overflow: auto;
+      margin: 0;
+      padding-left: 1rem;
+      font-size: 0.85rem;
+    }
+  }
+
+  .import-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    .expand {
+      flex-grow: 1;
+    }
+  }
+}

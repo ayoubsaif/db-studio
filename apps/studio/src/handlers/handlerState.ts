@@ -3,6 +3,7 @@ import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
 import { CancelableQuery } from "@/lib/db/models";
 import { IDbConnectionPublicServer } from "@/lib/db/server";
 import { Export } from "@/lib/export";
+import type { ImportRecord } from "./importHandlers";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { MessagePortMain } from "electron";
 
@@ -16,6 +17,7 @@ class State {
   queries: Map<string, CancelableQuery> = new Map();
   generator: SqlGenerator = null;
   exports: Map<string, Export> = new Map();
+  imports: Map<string, ImportRecord> = new Map();
 
   connectionAbortController: AbortController = null;
 }

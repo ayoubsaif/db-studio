@@ -14,7 +14,11 @@
       >
         <div class="dialog-content">
           <div class="dialog-c-title flex flex-middle">
-            <div>
+            <div v-if="multiMode">
+              Export
+              <span class="text-primary">{{ selectedTables.length }} {{ selectedTables.length === 1 ? 'table' : 'tables' }}</span>
+            </div>
+            <div v-else>
               Export
               <span class="text-primary truncate">{{ table ? table.name : queryName }}</span>
               <span
@@ -26,12 +30,26 @@
             </div>
           </div>
 
-          <p>This will {{ table ? 'export table rows' : 'run your query and save the results' }}  directly to a file.</p>
-          <p>You can choose the format and file name.</p>
-          <p>
-            For {{ table ? 'tables with many' : 'queries with many results' }} rows, this will run in the background,
-            allowing you to continue to do other work.
-          </p>
+          <template v-if="multiMode">
+            <p>
+              Each table is exported to its own file in the folder you choose, one after another,
+              in the background.
+            </p>
+            <p
+              v-if="hasFilters"
+              class="text-muted"
+            >
+              Filters aren't applied when exporting multiple tables; every row is exported.
+            </p>
+          </template>
+          <template v-else>
+            <p>This will {{ table ? 'export table rows' : 'run your query and save the results' }}  directly to a file.</p>
+            <p>You can choose the format and file name.</p>
+            <p>
+              For {{ table ? 'tables with many' : 'queries with many results' }} rows, this will run in the background,
+              allowing you to continue to do other work.
+            </p>
+          </template>
 
           <span class="close-btn btn btn-fab">
             <i
@@ -47,9 +65,23 @@
             <div>Error: {{ error.message }}</div>
           </div>
           <div class="modal-form export-form">
+            <!-- Tables (multi-table export) -->
+            <div
+              v-if="multiMode"
+              class="form-group"
+            >
+              <label>Tables</label>
+              <export-table-picker
+                :tables="allTables"
+                v-model="selectedTables"
+              />
+            </div>
             <div class="flex">
               <!-- File Name -->
-              <div class="file-name form-group expand">
+              <div
+                v-if="!multiMode"
+                class="file-name form-group expand"
+              >
                 <label for="fileName">File Name</label>
                 <input
                   type="text"
@@ -96,6 +128,29 @@
                 :options="dialogOptions"
                 button-text="Choose"
               />
+            </div>
+
+            <!-- Existing files (multi-table export) -->
+            <div
+              v-if="multiMode"
+              class="form-group"
+            >
+              <label for="existingFiles">If a file already exists</label>
+              <select
+                id="existingFiles"
+                class="form-control custom-select"
+                v-model="existingFiles"
+              >
+                <option value="number">
+                  Keep it and add a number to the new file
+                </option>
+                <option value="overwrite">
+                  Overwrite it
+                </option>
+                <option value="skip">
+                  Skip that table
+                </option>
+              </select>
             </div>
 
             <!-- Advanced Options -->
@@ -147,17 +202,19 @@
         </div>
         <div class="vue-dialog-buttons">
           <button
+            v-if="!multiMode && table"
             class="btn btn-flat btn-icon"
             type="button"
-            @click.prevent="upgradeModal"
+            @click.prevent="switchToMultiple"
           >
             <i class="material-icons">tab</i>
             Export multiple tables
           </button>
+          <span v-else />
           <button
             class="btn btn-primary"
             type="submit"
-            :disabled="!filePath"
+            :disabled="!canSubmit"
           >
             Run
           </button>
@@ -170,9 +227,9 @@
 import dateFormat from 'dateformat'
 import { mapMutations } from "vuex"
 import rawlog from 'electron-log'
-import { ExportFormCSV, ExportFormJSON, ExportFormSQL, ExportFormJsonLine } from "./forms"
+import { ExportFormCSV, ExportFormJSON, ExportFormSQL, ExportFormJsonLine, ExportFormXLSX } from "./forms"
 import FilePicker from '../common/form/FilePicker.vue'
-import { AppEvent } from '@/common/AppEvent'
+import ExportTablePicker from './ExportTablePicker.vue'
 const log = rawlog.scope('export/export-modal')
 
 const exportFormats = [
@@ -192,6 +249,11 @@ const exportFormats = [
     component: ExportFormJsonLine
   },
   {
+    name: 'Excel',
+    key: 'xlsx',
+    component: ExportFormXLSX,
+  },
+  {
     name: "SQL",
     key: "sql",
     component: ExportFormSQL,
@@ -199,8 +261,9 @@ const exportFormats = [
 ]
 
 export default {
-  components: { FilePicker },
-  props: ['table', 'query', 'queryName', 'filters'],
+  components: { FilePicker, ExportTablePicker },
+  // `multiple` opens the multi-table export with `tables` pre-selected
+  props: ['table', 'query', 'queryName', 'filters', 'multiple', 'tables'],
   data() {
     return {
       selectedExportFormat: exportFormats[0],
@@ -210,12 +273,22 @@ export default {
       error: null,
       fileDirectory: null,
       fileName: null,
-      advancedToggled: false
+      advancedToggled: false,
+      multiMode: !!this.multiple,
+      selectedTables: this.tables ? [...this.tables] : [],
+      existingFiles: 'number',
     };
   },
   watch: {
     table() {
       if (this.table) {
+        this.$modal.show("export-modal");
+      }
+    },
+    multiple() {
+      if (this.multiple) {
+        this.multiMode = true
+        this.selectedTables = this.tables ? [...this.tables] : []
         this.$modal.show("export-modal");
       }
     },
@@ -243,6 +316,10 @@ export default {
       const formatted = dateFormat(now, 'yyyy-mm-dd_HHMMss')
       const extension = this.selectedExportFormat.key
       let fileName;
+      if (!this.table && !this.queryName) {
+        // multi-table export: each table gets its own file name
+        return ''
+      }
       if (this.table) {
         const schema = this.table.schema ? `${this.table.schema}_` : ''
         const extension = this.selectedExportFormat.key
@@ -260,6 +337,13 @@ export default {
     filePath() {
       if (!this.fileDirectory || !this.fileName) return null
       return window.main.join(this.fileDirectory, this.fileName)
+    },
+    allTables() {
+      return this.$store.state.tables || []
+    },
+    canSubmit() {
+      if (this.multiMode) return !!this.fileDirectory && this.selectedTables.length > 0
+      return !!this.filePath
     },
     dialogOptions() {
       const result = { buttonLabel: 'Choose Directory', properties: [ 'openDirectory', 'createDirectory'] }
@@ -296,8 +380,21 @@ export default {
     async submit() {
       this.error = null;
 
-      if (!this.filePath) {
+      if (!this.canSubmit) {
         return;
+      }
+
+      if (this.multiMode) {
+        this.$emit('exportMany', { // handled by ExportManager
+          tables: this.selectedTables,
+          directory: this.fileDirectory,
+          existing: this.existingFiles,
+          exporter: this.selectedExportFormat.key,
+          options: this.options,
+          outputOptions: this.outputOptions,
+        })
+        this.$modal.hide('export-modal')
+        return
       }
 
       // eslint-disable-next-line
@@ -319,9 +416,9 @@ export default {
     closeModal () {
       this.$modal.hide('export-modal')
     },
-    upgradeModal() {
-      this.closeModal()
-      this.$root.$emit(AppEvent.upgradeModal)
+    switchToMultiple() {
+      this.selectedTables = this.table ? [this.table] : []
+      this.multiMode = true
     },
     toggleAdvanced() {
       this.advancedToggled = !this.advancedToggled

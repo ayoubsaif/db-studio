@@ -326,8 +326,8 @@ const store = new Vuex.Store<State>({
     }
   },
   actions: {
-    async test(context, config: IConnection) {
-      await Vue.prototype.$util.send('conn/test', { config, osUser: context.state.username });
+    async test(context, config: IConnection): Promise<string | null> {
+      return await Vue.prototype.$util.send('conn/test', { config, osUser: context.state.username });
     },
 
     async fetchUsername(context) {

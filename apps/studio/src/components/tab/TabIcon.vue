@@ -13,6 +13,10 @@
     :class="iconClass"
   >construction</i>
   <i
+    v-else-if="tab.tabType === 'import-table'"
+    class="material-icons-outlined item-icon icon-table-properties"
+  >upload_file</i>
+  <i
     v-else-if="tab.tabType === 'settings'"
     class="material-icons item-icon settings"
   >settings</i>

@@ -4,6 +4,7 @@
   "repository": "git@github.com:beekeeper-studio/beekeeper-studio.git",
   "author": "Matthew Rathbone <matthew.rathbone@gmail.com>",
   "license": "MIT",
+  "packageManager": "yarn@1.22.22",
   "private": true,
   "workspaces": {
     "packages": [

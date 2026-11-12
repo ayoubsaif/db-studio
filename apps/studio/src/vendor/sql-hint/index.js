@@ -1,12 +1,12 @@
 /* eslint-disable */
 // "forked" from CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: https://codemirror.net/5/LICENSE
+
+// Import CodeMirror directly so the hint registers on the same instance the
+// editor uses (the UMD wrapper fell back to an undefined global under Vite).
+import CodeMirror from "codemirror";
+
 (function(mod) {
-  if (typeof exports == "object" && typeof module == "object") // CommonJS
-    mod(require("../../../../../node_modules/codemirror/lib/codemirror"), require("../../../../../node_modules/codemirror/mode/sql/sql"));
-  else if (typeof define == "function" && define.amd) // AMD
-    define(["../../../../../node_modules/codemirror/lib/codemirror", "../../../../../node_modules/codemirror/mode/sql/sql"], mod);
-  else // Plain browser env
     mod(CodeMirror);
 })(function(CodeMirror) {
   "use strict";

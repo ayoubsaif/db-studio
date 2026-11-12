@@ -4,12 +4,11 @@
 
 // declare global: DOMRect
 
+// Import CodeMirror directly so the addon registers on the same instance the
+// editor uses (the UMD wrapper fell back to an undefined global under Vite).
+import CodeMirror from "codemirror";
+
 (function(mod) {
-  if (typeof exports == "object" && typeof module == "object") // CommonJS
-    mod(require("../../../../../node_modules/codemirror/lib/codemirror"));
-  else if (typeof define == "function" && define.amd) // AMD
-    define(["../../../../../node_modules/codemirror/lib/codemirror"], mod);
-  else // Plain browser env
     mod(CodeMirror);
 })(function(CodeMirror) {
   "use strict";

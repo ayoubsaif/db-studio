@@ -70,10 +70,10 @@ export default {
           }
         },
         {
-          name: "Import from CSV",
+          name: "Import from File",
+          // BigQuery tables can't be written to yet
           class: isBQClass,
           slug: 'import',
-          ultimate: true,
           handler: ({ item }) => {
             this.trigger(AppEvent.beginImport, { table: item })
           }
@@ -161,6 +161,16 @@ export default {
           slug: 'hide-schema',
           handler: ({ item }) => {
             this.trigger(AppEvent.toggleHideSchema, item, true)
+          },
+        },
+        {
+          name: "Export tables...",
+          slug: 'export-tables',
+          class: disabled(dialect.disabledFeatures?.exportTable),
+          handler: ({ item }) => {
+            const tables = (this.$store.state.tables || [])
+              .filter((t) => t.schema === item && t.entityType === 'table')
+            this.trigger(AppEvent.beginExport, { multiple: true, tables })
           },
         },
         { type: 'divider' },

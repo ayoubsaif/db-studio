@@ -11,6 +11,11 @@ import { TableKey } from "@shared/lib/dialects/models";
 import { IDbConnectionServer } from "../backendTypes";
 
 export class RedshiftClient extends PostgresClient {
+  // Redshift has no ON CONFLICT
+  importUpsertSql(): string | null {
+    return null
+  }
+
   async supportedFeatures(): Promise<SupportedFeatures> {
     return {
       customRoutines: true,

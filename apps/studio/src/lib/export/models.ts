@@ -19,7 +19,7 @@ export interface StartExportOptions {
   query?: string,
   queryName?: string,
   filters: TableFilter[],
-  exporter: 'csv' | 'json' | 'sql' | 'jsonl'
+  exporter: 'csv' | 'json' | 'sql' | 'jsonl' | 'xlsx'
   filePath: string
   options: {
     chunkSize: number
@@ -27,6 +27,27 @@ export interface StartExportOptions {
     includeFilter: boolean
   }
   outputOptions: any
+}
+
+/** What the export dialog sends to run a multi-table export. */
+export interface MultiExportRequest {
+  tables: TableOrView[]
+  directory: string
+  existing: 'overwrite' | 'skip' | 'number'
+  exporter: StartExportOptions['exporter']
+  options: StartExportOptions['options']
+  outputOptions: any
+}
+
+export type MultiExportOutcome = 'exported' | 'failed' | 'skipped' | 'cancelled' | 'not started'
+
+/** One table's line in a multi-table export summary. */
+export interface MultiExportTableResult {
+  name: string
+  outcome: MultiExportOutcome
+  rows: number
+  filePath?: string
+  message?: string
 }
 
 export interface ExportProgress {

@@ -100,21 +100,9 @@
                 <hr>
                 <x-menuitem @click.prevent="submitQueryToFile">
                   <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
-                  <i
-                    v-if="$config.isCommunity"
-                    class="material-icons menu-icon"
-                  >
-                    stars
-                  </i>
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitCurrentQueryToFile">
                   <x-label>Run Current to File</x-label>
-                  <i
-                    v-if="$config.isCommunity"
-                    class="material-icons menu-icon "
-                  >
-                    stars
-                  </i>
                 </x-menuitem>
               </x-menu>
             </x-button>
@@ -386,7 +374,7 @@
       ...mapState('tabs', { 'activeTab': 'active' }),
       userKeymap: {
         get() {
-          const value = this.settings?.keymap.value;
+          const value = this.settings?.keymap?.value;
           return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
         },
         set(value) {
@@ -815,10 +803,6 @@
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
       },
       async submitQueryToFile() {
-        if (this.$config.isCommunity) {
-          this.$root.$emit(AppEvent.upgradeModal)
-          return;
-        }
         // run the currently hilighted text (if any) to a file, else all sql
         const query_sql = this.hasSelectedText ? this.editor.selection : this.unsavedText
         const saved_name = this.hasTitle ? this.query.title : null
@@ -827,10 +811,6 @@
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQueryToFile() {
-        if (this.$config.isCommunity) {
-          this.$root.$emit(AppEvent.upgradeModal)
-          return;
-        }
         // run the currently selected query (if there are multiple) to a file, else all sql
         const query_sql = this.currentlySelectedQuery ? this.currentlySelectedQuery.text : this.unsavedText
         const saved_name = this.hasTitle ? this.query.title : null
