@@ -6,6 +6,7 @@ import { AppDbHandlers } from './handlers/appDbHandlers';
 import { ConnHandlers } from './handlers/connHandlers';
 import { ExportHandlers } from './handlers/exportHandlers';
 import { GeneratorHandlers } from './handlers/generatorHandlers';
+import { GitSyncHandlers } from './handlers/gitSyncHandlers';
 import { ImportHandlers } from './handlers/importHandlers';
 import { Handlers } from './handlers/handlers';
 import { newState, removeState, state } from './handlers/handlerState';
@@ -29,6 +30,7 @@ export let handlers: Handlers = {
   ...GeneratorHandlers,
   ...ExportHandlers,
   ...ImportHandlers,
+  ...GitSyncHandlers,
   ...AppDbHandlers
 }; 
 

@@ -25,18 +25,10 @@
                   </x-menuitem>
                 </x-menu>
               </x-button>
-              <a
-                class=""
-                @click.prevent="refresh"
-              >
-                <i
-                  title="Refresh Saved Queries"
-                  class="material-icons"
-                >refresh</i>
-              </a>
             </div>
           </div>
         </div>
+        <git-sync-bar />
         <!-- Filter -->
         <div class="fixed query-filter">
           <div class="filter">
@@ -154,9 +146,10 @@ import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
 import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
 import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
+import GitSyncBar from './GitSyncBar.vue'
 
 export default {
-  components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, QueryRenameForm },
+  components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, QueryRenameForm, GitSyncBar },
   data: function () {
     return {
       checkedFavorites: [],
@@ -241,9 +234,6 @@ export default {
       } else {
         this.selected = null
       }
-    },
-    refresh() {
-      this.$store.dispatch("data/queries/load")
     },
     isActive(item) {
       return this.activeTab && this.activeTab.queryId === item.id

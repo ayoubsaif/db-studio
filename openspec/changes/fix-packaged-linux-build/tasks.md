@@ -11,6 +11,6 @@
 
 ## 3. Install and verify
 
-- [ ] 3.1 Install with `sudo pacman -U apps/studio/dist_electron/db-studio-4.6.2.pacman` and launch `db-studio`
-- [ ] 3.2 Check the custom features in the installed app: query "Run to File", multi-table export, `.xlsx` export, file import, ClickHouse connection
-- [ ] 3.3 Commit the changes
+- [x] 3.1 Install with `sudo pacman -U apps/studio/dist_electron/db-studio-4.6.2.pacman` and launch `db-studio`
+- [x] 3.2 Check the custom features in the installed app: query "Run to File", multi-table export, `.xlsx` export, file import, ClickHouse connection
+- [x] 3.3 Commit the changes

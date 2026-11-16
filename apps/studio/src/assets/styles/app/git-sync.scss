@@ -1,0 +1,94 @@
+.git-sync-bar {
+  padding: 0.5rem $gutter-w;
+  border-bottom: 1px solid $border-color;
+  font-size: 0.9rem;
+
+  .git-sync-line {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    .expand { flex: 1 1 auto; min-width: 0; }
+    .refresh, .settings { display: flex; flex: 0 0 auto; }
+    .branch-icon { font-size: 1.1rem; color: $text-lighter; }
+    .branch { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; &.muted { color: $text-lighter; } }
+    .badge {
+      padding: 0 0.35rem;
+      border-radius: 3px;
+      font-size: 0.8rem;
+      &.behind { color: $brand-warning; border: 1px solid $brand-warning; }
+      &.ahead { color: $theme-primary; border: 1px solid $theme-primary; }
+    }
+    .refresh.spinning i { animation: git-sync-spin 1s linear infinite; }
+  }
+
+  .git-sync-buttons {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      flex: 0 0 auto;
+      gap: 0.2rem;
+      white-space: nowrap;
+      border: 1px solid $border-color;
+      &.btn-primary { border-color: transparent; }
+    }
+    .btn i { font-size: 1.1rem; }
+    .count { margin-left: 0.15rem; opacity: 0.8; }
+  }
+
+  .git-sync-message {
+    margin-top: 0.4rem;
+    color: $text-lighter;
+    word-break: break-word;
+    &.error { color: $brand-danger; }
+  }
+}
+
+@keyframes git-sync-spin {
+  to { transform: rotate(360deg); }
+}
+
+.git-sync-modal {
+  .auto-fetch-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    label { margin: 0; }
+    .interval-input { width: 5rem; }
+  }
+  .vue-dialog-buttons { display: flex; gap: 0.5rem; margin-top: 1rem; }
+  .btn-danger-text { color: $brand-danger; }
+
+  .conflict {
+    border: 1px solid $border-color;
+    border-radius: 4px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    .conflict-title { font-weight: 600; margin-bottom: 0.5rem; }
+    .conflict-versions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      .label { color: $text-lighter; font-size: 0.8rem; margin-bottom: 0.2rem; }
+      pre {
+        margin: 0;
+        max-height: 10rem;
+        overflow: auto;
+        white-space: pre-wrap;
+        font-size: 0.8rem;
+      }
+    }
+    .conflict-choice {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 0.6rem;
+    }
+  }
+}
