@@ -33,7 +33,8 @@ if (isRenderer()) {
 
   const platform = p.env.OS_OVERRIDE ? p.env.OS_OVERRIDE : p.platform
   const testMode = p.env.TEST_MODE ? true : false
-  const isDevEnv = !(e?.app && (e?.app.isPackaged ?? p.env.isPackaged));
+  // the utility process has no electron app, so main passes isPackaged as the string 'true'/'false'
+  const isDevEnv = !(e?.app ? e.app.isPackaged : p.env.isPackaged === 'true');
   const isWindows = platform === 'win32'
   const isMac = platform === 'darwin'
   const isArm = p.arch.startsWith('arm')

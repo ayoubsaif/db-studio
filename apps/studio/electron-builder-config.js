@@ -4,8 +4,14 @@ const fpmOptions = [
 ]
 
 module.exports = {
-  appId: "io.beekeeperstudio.desktop",
-  productName: "Beekeeper Studio",
+  // This fork has its own identity so it never shares a user data directory
+  // (~/.config/db-studio) with the official Beekeeper Studio, whose newer
+  // app.db schema this older code base cannot open.
+  appId: "dev.ayoubsaif.dbstudio",
+  productName: "DB Studio",
+  extraMetadata: {
+    name: "db-studio"
+  },
   releaseInfo: {
     releaseNotesFile: "build/release-notes.md"
   },
@@ -111,13 +117,14 @@ module.exports = {
   linux: {
     icon: './public/icons/png/',
     category: "Development",
+    executableName: "db-studio",
     target: [
       'snap',
       'deb',
       'appImage'
     ],
     desktop: {
-      'StartupWMClass': 'beekeeper-studio'
+      'StartupWMClass': 'db-studio'
     },
   },
   deb: {
@@ -127,6 +134,10 @@ module.exports = {
     fpm: fpmOptions,
     // when we upgrade Electron we need to check these
     depends: ["libgtk-3-0", "libnotify4", "libnss3", "libxss1", "libxtst6", "xdg-utils", "libatspi2.0-0", "libuuid1", "libsecret-1-0", "gnupg"]
+  },
+  pacman: {
+    // default list includes http-parser, which no longer exists in Arch repos
+    depends: ["gtk3", "libnotify", "nss", "libxss", "libxtst", "xdg-utils", "at-spi2-core", "util-linux-libs", "libsecret"]
   },
   appImage: {
     publish: ['github'],

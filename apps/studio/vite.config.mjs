@@ -14,7 +14,9 @@ import commonjs from 'vite-plugin-commonjs'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [vue(), commonjs()],
-  base: '/', // Set the base URL for the app
+  // Relative so assets load from app://./renderer/assets/ (the app:// handler
+  // serves dist/, and index.html lives in dist/renderer/). '/' broke packaged builds.
+  base: './',
   optimizeDeps: {
     exclude: []
   },
