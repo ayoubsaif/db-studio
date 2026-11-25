@@ -12,9 +12,21 @@ import { BigQueryClient } from './clients/bigquery';
 import { FirebirdClient } from './clients/firebird';
 import { OracleClient } from "./clients/oracle";
 import { CassandraClient } from "./clients/cassandra";
-import { LibSQLClient } from "./clients/libsql";
 import { ClickHouseClient } from "./clients/clickhouse";
 import { IDbConnectionServer } from "./backendTypes";
+
+/**
+ * libSQL ships a native binary that does not exist for every platform
+ * (e.g. Windows ARM64). Load the driver on first use so a missing binary
+ * only breaks libSQL connections instead of crashing the whole app at startup.
+ */
+class LazyLibSQLClient {
+  constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { LibSQLClient } = require("./clients/libsql");
+    return new LibSQLClient(server, database);
+  }
+}
 
 const clients = new Map<ConnectionType, any>([
   ['mysql', MysqlClient],
@@ -29,7 +41,7 @@ const clients = new Map<ConnectionType, any>([
   ['firebird', FirebirdClient],
   ['oracle', OracleClient],
   ['cassandra', CassandraClient],
-  ['libsql', LibSQLClient],
+  ['libsql', LazyLibSQLClient],
   ['clickhouse', ClickHouseClient],
 ], );
 
